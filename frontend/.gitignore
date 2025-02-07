@@ -41,17 +41,3 @@ next-env.d.ts
 
 # open-next
 .open-next
-
-frontend/.git
-
-################################################
-backend/*.js
-backend/!jest.config.js
-backend/*.d.ts
-node_modules
-
-# CDK asset staging directory
-backend/.cdk.staging
-backend/cdk.out
-.env
-backend/.git

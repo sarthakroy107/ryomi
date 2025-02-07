@@ -1,0 +1,611 @@
+Parameters:
+  SsmParameterValuetranscoderDATABASEURLC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/DATABASE_URL
+  SsmParameterValuetranscoderAWSS3INPUTBUCKETNAMEC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_S3_INPUT_BUCKET_NAME
+  SsmParameterValuetranscoderAWSSQSURLC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_SQS_URL
+  SsmParameterValuetranscoderAWSSQSARNC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_SQS_ARN
+  SsmParameterValuetranscoderAWSRYOMIVPCSG1C96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_RYOMI_VPC_SG_1
+  SsmParameterValuetranscoderAWSRYOMIVPCSUBNETAC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_RYOMI_VPC_SUBNET_A
+  SsmParameterValuetranscoderAWSECSCLUSTERNAMEC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_ECS_CLUSTER_NAME
+  SsmParameterValuetranscoderAWSECSTASKDEFINITIONC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /transcoder/AWS_ECS_TASK_DEFINITION
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Resources:
+  ryomiServiceRole42DE5EB3:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: HonoAwsStack/ryomi/ServiceRole/Resource
+  ryomiServiceRoleDefaultPolicy77DF293B:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:Abort*
+              - s3:DeleteObject*
+              - s3:GetBucket*
+              - s3:GetObject*
+              - s3:List*
+              - s3:PutObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":s3:::"
+                    - Ref: SsmParameterValuetranscoderAWSS3INPUTBUCKETNAMEC96584B6F00A464EAD1953AFF4B05118Parameter
+                    - /*
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":s3:::"
+                    - Ref: SsmParameterValuetranscoderAWSS3INPUTBUCKETNAMEC96584B6F00A464EAD1953AFF4B05118Parameter
+          - Action:
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:SendMessage
+            Effect: Allow
+            Resource:
+              Ref: SsmParameterValuetranscoderAWSSQSARNC96584B6F00A464EAD1953AFF4B05118Parameter
+        Version: "2012-10-17"
+      PolicyName: ryomiServiceRoleDefaultPolicy77DF293B
+      Roles:
+        - Ref: ryomiServiceRole42DE5EB3
+    Metadata:
+      aws:cdk:path: HonoAwsStack/ryomi/ServiceRole/DefaultPolicy/Resource
+  ryomiA511500B:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 3db3b3384232f619341fdaa23886c01c74579dac38a8b8efd0246123e7485b5f.zip
+      Environment:
+        Variables:
+          DATABASE_URL:
+            Ref: SsmParameterValuetranscoderDATABASEURLC96584B6F00A464EAD1953AFF4B05118Parameter
+          AWS_S3_BUCKET_NAME:
+            Ref: SsmParameterValuetranscoderAWSS3INPUTBUCKETNAMEC96584B6F00A464EAD1953AFF4B05118Parameter
+          AWS_SQS_URL:
+            Ref: SsmParameterValuetranscoderAWSSQSURLC96584B6F00A464EAD1953AFF4B05118Parameter
+      FunctionName: ryomi
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - ryomiServiceRole42DE5EB3
+          - Arn
+      Runtime: nodejs20.x
+      Timeout: 15
+    DependsOn:
+      - ryomiServiceRoleDefaultPolicy77DF293B
+      - ryomiServiceRole42DE5EB3
+    Metadata:
+      aws:cdk:path: HonoAwsStack/ryomi/Resource
+      aws:asset:path: asset.3db3b3384232f619341fdaa23886c01c74579dac38a8b8efd0246123e7485b5f
+      aws:asset:is-bundled: true
+      aws:asset:property: Code
+  ryomiFunctionUrl9A8F44F2:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn:
+        Fn::GetAtt:
+          - ryomiA511500B
+          - Arn
+    Metadata:
+      aws:cdk:path: HonoAwsStack/ryomi/FunctionUrl/Resource
+  ryomiinvokefunctionurl1B3E3E70:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunctionUrl
+      FunctionName:
+        Fn::GetAtt:
+          - ryomiA511500B
+          - Arn
+      FunctionUrlAuthType: NONE
+      Principal: "*"
+    Metadata:
+      aws:cdk:path: HonoAwsStack/ryomi/invoke-function-url
+  sqsconsumerServiceRoleD6E76C92:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: HonoAwsStack/sqs-consumer/ServiceRole/Resource
+  sqsconsumerServiceRoleDefaultPolicyA9D09377:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+            Effect: Allow
+            Resource:
+              Ref: SsmParameterValuetranscoderAWSSQSARNC96584B6F00A464EAD1953AFF4B05118Parameter
+          - Action:
+              - ecs:DescribeTasks
+              - ecs:RunTask
+              - ecs:StopTask
+              - iam:PassRole
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: sqsconsumerServiceRoleDefaultPolicyA9D09377
+      Roles:
+        - Ref: sqsconsumerServiceRoleD6E76C92
+    Metadata:
+      aws:cdk:path: HonoAwsStack/sqs-consumer/ServiceRole/DefaultPolicy/Resource
+  sqsconsumerD52196D4:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: d7bf31b3549aaff6b17001e2a4cd68670e9428bc1684a7fb110c7f29f1da4e16.zip
+      Environment:
+        Variables:
+          AWS_RYOMI_VPC_SG_1:
+            Ref: SsmParameterValuetranscoderAWSRYOMIVPCSG1C96584B6F00A464EAD1953AFF4B05118Parameter
+          AWS_RYOMI_VPC_SUBNET_A:
+            Ref: SsmParameterValuetranscoderAWSRYOMIVPCSUBNETAC96584B6F00A464EAD1953AFF4B05118Parameter
+          AWS_ECS_CLUSTER_NAME:
+            Ref: SsmParameterValuetranscoderAWSECSCLUSTERNAMEC96584B6F00A464EAD1953AFF4B05118Parameter
+          AWS_ECS_TASK_DEFINITION:
+            Ref: SsmParameterValuetranscoderAWSECSTASKDEFINITIONC96584B6F00A464EAD1953AFF4B05118Parameter
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - sqsconsumerServiceRoleD6E76C92
+          - Arn
+      Runtime: nodejs20.x
+      Timeout: 45
+    DependsOn:
+      - sqsconsumerServiceRoleDefaultPolicyA9D09377
+      - sqsconsumerServiceRoleD6E76C92
+    Metadata:
+      aws:cdk:path: HonoAwsStack/sqs-consumer/Resource
+      aws:asset:path: asset.d7bf31b3549aaff6b17001e2a4cd68670e9428bc1684a7fb110c7f29f1da4e16
+      aws:asset:is-bundled: true
+      aws:asset:property: Code
+  sqsconsumerSqsEventSourceHonoAwsStackImportedQueueBB67D1C8BF3D7777:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      EventSourceArn:
+        Ref: SsmParameterValuetranscoderAWSSQSARNC96584B6F00A464EAD1953AFF4B05118Parameter
+      FunctionName:
+        Ref: sqsconsumerD52196D4
+    Metadata:
+      aws:cdk:path: HonoAwsStack/sqs-consumer/SqsEventSource:HonoAwsStackImportedQueueBB67D1C8/Resource
+  myapi162F20B8:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: myapi
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Resource
+  myapiDeploymentB7EF8EB7d196d39f3a19050446f09caf7f986911:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      Description: Automatically created by the RestApi construct
+      RestApiId:
+        Ref: myapi162F20B8
+    DependsOn:
+      - myapiproxyANYDD7FCE64
+      - myapiproxyOPTIONS4C4505C9
+      - myapiproxyB6DF4575
+      - myapiANY111D56B7
+      - myapiOPTIONS3DBCE8E2
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Deployment/Resource
+  myapiDeploymentStageprod329F21FF:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId:
+        Ref: myapiDeploymentB7EF8EB7d196d39f3a19050446f09caf7f986911
+      RestApiId:
+        Ref: myapi162F20B8
+      StageName: prod
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/DeploymentStage.prod/Resource
+  myapiOPTIONS3DBCE8E2:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+              method.response.header.Access-Control-Allow-Origin: "'http://localhost:3000'"
+              method.response.header.Vary: "'Origin'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
+            StatusCode: "204"
+        RequestTemplates:
+          application/json: "{ statusCode: 200 }"
+        Type: MOCK
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Vary: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Credentials: true
+          StatusCode: "204"
+      ResourceId:
+        Fn::GetAtt:
+          - myapi162F20B8
+          - RootResourceId
+      RestApiId:
+        Ref: myapi162F20B8
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/OPTIONS/Resource
+  myapiproxyB6DF4575:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+          - myapi162F20B8
+          - RootResourceId
+      PathPart: "{proxy+}"
+      RestApiId:
+        Ref: myapi162F20B8
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/{proxy+}/Resource
+  myapiproxyOPTIONS4C4505C9:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+              method.response.header.Access-Control-Allow-Origin: "'http://localhost:3000'"
+              method.response.header.Vary: "'Origin'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
+            StatusCode: "204"
+        RequestTemplates:
+          application/json: "{ statusCode: 200 }"
+        Type: MOCK
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Vary: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Credentials: true
+          StatusCode: "204"
+      ResourceId:
+        Ref: myapiproxyB6DF4575
+      RestApiId:
+        Ref: myapi162F20B8
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/{proxy+}/OPTIONS/Resource
+  myapiproxyANYApiPermissionHonoAwsStackmyapiA6F22529ANYproxy5A2FA7DC:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - ryomiA511500B
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: myapi162F20B8
+            - /
+            - Ref: myapiDeploymentStageprod329F21FF
+            - /*/*
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/{proxy+}/ANY/ApiPermission.HonoAwsStackmyapiA6F22529.ANY..{proxy+}
+  myapiproxyANYApiPermissionTestHonoAwsStackmyapiA6F22529ANYproxyCD2909F3:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - ryomiA511500B
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: myapi162F20B8
+            - /test-invoke-stage/*/*
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/{proxy+}/ANY/ApiPermission.Test.HonoAwsStackmyapiA6F22529.ANY..{proxy+}
+  myapiproxyANYDD7FCE64:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - ryomiA511500B
+                  - Arn
+              - /invocations
+      ResourceId:
+        Ref: myapiproxyB6DF4575
+      RestApiId:
+        Ref: myapi162F20B8
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/{proxy+}/ANY/Resource
+  myapiANYApiPermissionHonoAwsStackmyapiA6F22529ANY2BC6AFFD:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - ryomiA511500B
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: myapi162F20B8
+            - /
+            - Ref: myapiDeploymentStageprod329F21FF
+            - /*/
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/ANY/ApiPermission.HonoAwsStackmyapiA6F22529.ANY..
+  myapiANYApiPermissionTestHonoAwsStackmyapiA6F22529ANY588849F3:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - ryomiA511500B
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: myapi162F20B8
+            - /test-invoke-stage/*/
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/ANY/ApiPermission.Test.HonoAwsStackmyapiA6F22529.ANY..
+  myapiANY111D56B7:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - ryomiA511500B
+                  - Arn
+              - /invocations
+      ResourceId:
+        Fn::GetAtt:
+          - myapi162F20B8
+          - RootResourceId
+      RestApiId:
+        Ref: myapi162F20B8
+    Metadata:
+      aws:cdk:path: HonoAwsStack/myapi/Default/ANY/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/2VQwW7CMAz9Fu7BU0HbHdh2GlvXamdkWtOFtkkXO7Cq6r9PCQUh7fSeHef5+S0geUogmeGZ50VZzxu9hyEXLGq1OZgUHbYk5FRGbL0rSOGZdwMvYe2LmmSNTIp/GD49eYpVg+2+xJ2xJR0Z3iO8elOItkZpbGHIbENBPWJqG130cVlko+LlDplJGFYBJkEYNgdz07mSL9eErxOk5FrNHAZeTmQkj5a32HXaVGHgf3dU2OkKhc7Yw/AWV2XEsup0tDjRZ+oa27dkJHTvqlywisdcyDWmmMSW5NuW4XFiqbO//S3Ji3zk46jirUFksvrhpfNyPxT4xppSh8NHFQKGIz+cFgt4hGR2ZK3nzhvRLUF2wT/s5o0K3gEAAA==
+    Metadata:
+      aws:cdk:path: HonoAwsStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Outputs:
+  myapiEndpoint8EB17201:
+    Value:
+      Fn::Join:
+        - ""
+        - - https://
+          - Ref: myapi162F20B8
+          - .execute-api.
+          - Ref: AWS::Region
+          - "."
+          - Ref: AWS::URLSuffix
+          - /
+          - Ref: myapiDeploymentStageprod329F21FF
+          - /
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-3
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-4
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - il-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+      - Fn::Equals:
+          - Ref: AWS::Region
+          - us-west-2
+

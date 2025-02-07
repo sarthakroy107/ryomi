@@ -1,0 +1,5 @@
+version = 0.1
+
+[default.local]
+stack_name = "HonoAwsStack"
+region = "ap-south-1" # Specify your AWS region

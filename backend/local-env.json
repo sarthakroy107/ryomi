@@ -1,0 +1,13 @@
+{
+  "lambda": {
+    "DATABASE_URL": "postgresql://hlf5ul:xau_93Rv6KtNDfMq5OCs65UFCZG6eBRAk1Ju1@eu-central-1.sql.xata.sh/Ryomi:main?sslmode=require",
+    "AWS_S3_BUCKET_NAME": "ryomi-input",
+    "AWS_SQS_URL": "https://sqs.ap-south-1.amazonaws.com/010928186729/ryomi-test.fifo"
+  },
+  "sqs-consumer": {
+    "AWS_RYOMI_VPC_SG_1": "your-vpc-sg-id",
+    "AWS_RYOMI_VPC_SUBNET_A": "your-vpc-subnet-id",
+    "AWS_ECS_CLUSTER_NAME": "your-ecs-cluster-name",
+    "AWS_ECS_TASK_DEFINITION": "your-ecs-task-definition-arn"
+  }
+}
